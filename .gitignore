@@ -1,0 +1,67 @@
+# .gitignore fil #
+##################
+# Innholder noen av de filene som skal i utgangspunktet ikke sjekkes inn i git. 
+# Finner du noe som mangler? Si gjerne fra, andre har kanskje samme problem, vi kan oppdatere filen!
+
+.idea
+.idea/*
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings
+.svn
+*.log
+*~
+catalog.xml
+nbactions.xml
+nbproject
+profiles.xml
+target
+*.apk
+gen
+local.properties
+.classpath
+*/**/.metadata
+.metadata
+.DS_Store
+.checkstyle
+.gwt
+noark-repository
+gwt-unitCache
+elling/ui/tomcat
+test-config.properties
+rebel.xml
+.externalToolBuilders
+~$*.xlsx
+*.pyc
+djangotools.sqlite
+# Excludes for cache-filer som brukes av wiki-skriptene
+buildtools/src/main/python/wikitools/*_cache.db
+
+# atomikos oppretter filer som skal ikke inn i repoen
+*.epoch
+*.lck
+
+#
+# Excludes for log4j.xml brukt i testsammenheng
+# #############################################
+dist/dist-jetty/src/test/resources/log4j.xml
+elling/domain/src/test/resources/log4j.xml
+elling/functional-tests/src/test/resources/log4j.xml
+elling/internals/src/test/resources/log4j.xml
+elling/integration/src/test/resources/log4j.xml
+elling/integration-dsf-stubs/src/test/resources/log4j.xml
+elling/integration-tests/src/test/resources/log4j.xml
+elling/migration/src/test/resources/log4j.xml
+elling/ui/src/test/resources/log4j.xml
+noark/services/src/test/resources/log4j.xml
+noark/services-internals/src/test/resources/log4j.xml
+noark/services-mock/src/test/resources/log4j.xml
+noark/functional-tests/src/test/resources/log4j.xml
+# Excludes for infinitest plugin
+infinitest.filters
+# Excludes local liquibase default properties
+liquibase.properties
+atlassian-ide-plugin.xml

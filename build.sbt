@@ -2,7 +2,7 @@ name := "se"
 
 version := "1.0-SNAPSHOT"
 
-scalaVersion := "2.11.0"
+scalaVersion in ThisBuild := "2.11.0"
 
 lazy val root = project.in(file(".")).aggregate(domain, util, web)
 

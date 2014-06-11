@@ -57,8 +57,6 @@ class BloombergAnalysisTest extends FunSuite {
         assert(paginationLinks != null)
         assert(!paginationLinks.isEmpty)
 
-        paginationLinks.map(_.getAttributeByName("href")).foreach(println)
-
         val tickerDataNode: TagNode = listOfCompaniesNode.findElementByAttValue("class", "ticker_data", true, false)
 
         assert(tickerDataNode.getName == "table")
@@ -75,10 +73,17 @@ class BloombergAnalysisTest extends FunSuite {
     }
 
     def companyPERatio(companyUrl:String):Double = {
+
+        println("Retrieving company information for '" + companyUrl + "'")
+
         val htmlCleaner = createHtmlCleaner
         val companyPageNode: TagNode = htmlCleaner.clean(pageContent(companyUrl))
 
-        val keyStatTable: TagNode = companyPageNode.getElementsByAttValue("class", "key_stat_data", true, false)(0).getElementsByName("tbody", false)(0)
+        val keyStatTableList: Array[TagNode] = companyPageNode.getElementsByAttValue("class", "key_stat_data", true, false)
+        if (keyStatTableList.isEmpty) {
+            return -1.0
+        }
+        val keyStatTable: TagNode = keyStatTableList(0).getElementsByName("tbody", false)(0)
         assert(keyStatTable != null)
 
         val statRows: Array[TagNode] = keyStatTable.getElementsByName("tr", false)
@@ -98,7 +103,6 @@ class BloombergAnalysisTest extends FunSuite {
     }
 
     test("Dumps PE-ratio from bloomberg") {
-
         val urlToCompaniesPages: Array[String] = companyPages(companiesUrl)
         assert(!urlToCompaniesPages.isEmpty)
 

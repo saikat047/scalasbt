@@ -10,15 +10,15 @@ import java.net.URI
 
 class BloombergAnalysisTest extends FunSuite {
 
-    val connTimeout = 3000
-    val responseTimeout = 10000
+    val connTimeout = 20000
+    val readTimeout = 20000
     val companiesUrl = "http://www.bloomberg.com/markets/companies/country/norway/"
 
 
     def pageContent(url:String):String = {
         val urlReq: Request = Http(url)
             .option(HttpOptions.connTimeout(connTimeout))
-            .option(HttpOptions.readTimeout(responseTimeout))
+            .option(HttpOptions.readTimeout(readTimeout))
         assert(urlReq.responseCode == 200, () => println("url: " + urlReq))
         urlReq.asString
     }
@@ -76,7 +76,7 @@ class BloombergAnalysisTest extends FunSuite {
         companySymbolList.map(value => new URI(companiesUrl).resolve(value._1.getAttributeByName("href")).toString)
     }
 
-    def companyPERatioOgDividend(companyUrl:String):Option[(Double, String, String)] = {
+    def companyPERatioOgDividend(companyUrl:String):Option[(Double, Double, String, String, String)] = {
         val htmlCleaner = createHtmlCleaner
         val companyPageNode: TagNode = htmlCleaner.clean(pageContent(companyUrl))
 
@@ -95,19 +95,35 @@ class BloombergAnalysisTest extends FunSuite {
             case Some(ratio) => ratio.toDouble
             case None => -1
         }
-        val cashDividend: String = statisticsValue(companyStats, "Cash Dividend") match {
-            case Some(dividend) => dividend
-            case None => ""
+        val estimatedPeRatio: Double = statisticsValue(companyStats, "Estimated P/E") match {
+            case Some(ratio) => ratio.toDouble
+            case None => 0
         }
         val estimatedEps: String = statisticsValue(companyStats, "Est. EPS") match {
             case Some(eps) => eps
             case None => ""
         }
-        Some((peRatio, cashDividend, estimatedEps))
+        val cashDividend: String = statisticsValue(companyStats, "Cash Dividend") match {
+            case Some(dividend) => dividend
+            case None => ""
+        }
+        val dividendGrossYield: String = statisticsValue(companyStats, "Dividend Indicated Gross Yield") match {
+            case Some(value) => value
+            case None => ""
+        }
+        // We have P/E Ratio information and we do not know the expected P/E ratio either.
+        if ((peRatio < 0 && estimatedPeRatio == 0) || cashDividend.isEmpty || estimatedEps.isEmpty) {
+            Option.empty
+        } else {
+            Some((peRatio, estimatedPeRatio, estimatedEps, cashDividend, dividendGrossYield))
+        }
     }
 
     def statisticsValue(values:Array[(String, String)], name:String):Option[String] = {
-        values.find(value => value._1.startsWith(name)).map(_._2)
+        values
+            .find(value => value._1.startsWith(name))
+            .map(_._2)
+            .find(value => !value.isEmpty && !value.contentEquals("-"))
     }
 
     def statistics(statisticsTable:TagNode):Array[(String, String)] = {
@@ -131,17 +147,19 @@ class BloombergAnalysisTest extends FunSuite {
         val companyLinks: Array[String] = urlToCompaniesPages.map(value => companyList(value)).flatten
         assert(!companyLinks.isEmpty)
 
-        // val companyLinks = Array("http://www.bloomberg.com/quote/NIS:SS")
+        // val companyLinks = Array("http://www.bloomberg.com/quote/NRS:NO")
         val infoCsv = new PrintWriter(new FileWriter(new File(java.lang.System.getProperty("user.home"), "aksjeinfo.csv")))
-        infoCsv.println("Url, P/E Ratio, Cash Dividend, Estimated EPS")
+        infoCsv.println("Url, P/E Ratio, Estimated P/E, Estimated EPS, Cash Dividend,Dividend Indicated Gross Yield")
 
         companyLinks.foreach(companyLink =>  {
             companyPERatioOgDividend(companyLink) match {
-                case Some((peRatio, cashDividend, estimatedEps)) => {
-                    if (cashDividend != "-" && estimatedEps != "-") {
-                        infoCsv.println(java.lang.String.format("%s,%s,%s,%s", companyLink, peRatio.toString, cashDividend, estimatedEps))
-                    }
+                case Some((peRatio, estimatedPeRatio, estimatedEps, cashDividend, dividendGrossYield)) => {
+                    println("Generating aksje informasjon for " + companyLink)
+                    infoCsv.println(java.lang.String.format("%s,%s,%s,%s,%s,%s",
+                        companyLink, peRatio.toString, estimatedPeRatio.toString, estimatedEps, cashDividend, dividendGrossYield))
+                    infoCsv.flush()
                 }
+                case None => {}
             }
         })
         infoCsv.close()
